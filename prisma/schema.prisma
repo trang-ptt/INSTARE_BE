@@ -1,0 +1,181 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+  email               String         @unique
+  username            String         @unique
+  password            String
+  name                String?
+  accessFailedCount   Int            @default(0)
+  ava                 String?
+  bio                 String?
+  socketId            String?
+  usernameLastChanged DateTime       @default(now())
+  accountType         AccountType    @default(USER)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  posts               Post[]
+  comments            Comment[]
+  likes               Like[]
+  stories             Story[]
+  notified            Notification[] @relation(name: "notified")
+  interacted          Notification[] @relation(name: "interacted")
+  following           Follow[]       @relation(name: "following")
+  follower            Follow[]       @relation(name: "follower")
+  participant         Participant[]
+  message             Message[]
+  readStories         ReadStory[]
+  reportedUsers       Report[]       @relation(name: "reportedUser")
+}
+
+model Mail_Otp {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  email    String  @unique
+  password String?
+  username String?
+  otp      Int
+}
+
+enum AccountType {
+  ADMIN
+  USER
+  BUSINESS
+}
+
+model Post {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  user          User           @relation(fields: [userId], references: [id])
+  userId        String         @db.ObjectId
+  mediaList     String[]
+  caption       String?
+  likes         Like[]
+  comments      Comment[]
+  notifications Notification[]
+  thumbnail     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  Report        Report[]
+}
+
+model Like {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  post   Post   @relation(fields: [postId], references: [id])
+  postId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @db.ObjectId
+}
+
+model Comment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @db.ObjectId
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Story {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  user        User        @relation(fields: [userId], references: [id])
+  userId      String      @db.ObjectId
+  media       String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  expiredAt   DateTime
+  readStories ReadStory[]
+}
+
+model ReadStory {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  user    User   @relation(fields: [userId], references: [id])
+  userId  String @db.ObjectId
+  story   Story  @relation(fields: [storyId], references: [id])
+  storyId String @db.ObjectId
+}
+
+model Notification {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  notiType     NotiType
+  notified     User     @relation(name: "notified", fields: [notifiedId], references: [id])
+  notifiedId   String   @db.ObjectId
+  interacted   User     @relation(name: "interacted", fields: [interactedId], references: [id])
+  interactedId String   @db.ObjectId
+  postId       String?  @db.ObjectId
+  post         Post?    @relation(fields: [postId], references: [id])
+  read         Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum NotiType {
+  FOLLOW
+  LIKE
+  COMMENT
+}
+
+model Follow {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  follower    User     @relation(name: "follower", fields: [followerId], references: [id])
+  followerId  String   @db.ObjectId
+  following   User     @relation(name: "following", fields: [followingId], references: [id])
+  followingId String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Conversation {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  name        String?
+  participant Participant[]
+  message     Message[]
+}
+
+model Participant {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String       @db.ObjectId
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String       @db.ObjectId
+}
+
+model Message {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String       @db.ObjectId
+  sender         User         @relation(fields: [senderId], references: [id])
+  senderId       String       @db.ObjectId
+  message        String
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Report {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  reportedUser   User           @relation(name: "reportedUser", fields: [reportedUserId], references: [id])
+  reportedUserId String         @db.ObjectId
+  postId         String?        @db.ObjectId
+  post           Post?          @relation(fields: [postId], references: [id])
+  reportReason   ReportReason[]
+  resolved       Boolean        @default(false)
+}
+
+model ReportReason {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String
+  reason   String?
+  reportId String  @db.ObjectId
+  report   Report  @relation(fields: [reportId], references: [id])
+}
