@@ -109,9 +109,12 @@ export class ChatService {
           select: {
             participant: {
               where: {
-                userId: {
-                  not: user.id,
-                },
+                user: {
+                  id: {
+                    not: user.id
+                  },
+                  accessFailedCount: 0
+                }
               },
               select: {
                 user: {

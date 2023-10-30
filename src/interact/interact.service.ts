@@ -245,6 +245,8 @@ export class InteractService {
         case 'COMMENT':
           message = `commented on your post`;
           break;
+        case 'REPORT':
+          message = `Your post was marked violated and deleted. Tell me if this was a mistake.`;
         default:
           break;
       }
@@ -255,6 +257,7 @@ export class InteractService {
         message,
         read: noti.read,
         createdAt: noti.createdAt,
+        notiType: noti.notiType
       });
     }
     return notifications;

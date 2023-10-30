@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   Param,
@@ -61,5 +62,10 @@ export class PostController {
   @Get('checkIfUserLikePost/:id')
   checkIfUserLikePost(@GetUser() user: User, @Param('id') id: string) {
     return this.postService.checkIfUserLikePost(user, id);
+  }
+
+  @Delete(':id')
+  deletePost(@GetUser() user: User, @Param('id') id: string) {
+    return this.postService.deletePost(user, id);
   }
 }

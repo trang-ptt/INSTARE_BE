@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -7,6 +7,7 @@ export class NoAuthService {
   searchUser(search: string) {
     return this.prismaService.user.findMany({
       where: {
+        accessFailedCount: 0,
         OR: [
           {
             username: {
@@ -31,8 +32,8 @@ export class NoAuthService {
     });
   }
 
-  viewPost(id: string) {
-    return this.prismaService.post.findUnique({
+  async viewPost(id: string) {
+    const post = await this.prismaService.post.findUnique({
       where: {
         id,
       },
@@ -66,8 +67,12 @@ export class NoAuthService {
             comment: true,
           },
         },
+        deletedAt: true,
       },
     });
+    if (!post) throw new ForbiddenException('Post not found')
+    if (post.deletedAt) throw new ForbiddenException('This post was deleted');
+    return post;
   }
 
   async viewUserProfile(username: string) {
@@ -81,6 +86,7 @@ export class NoAuthService {
         name: true,
         bio: true,
         ava: true,
+        accessFailedCount: true,
         _count: {
           select: {
             posts: true,
@@ -91,9 +97,14 @@ export class NoAuthService {
       },
     });
 
+    if (!profile) throw new ForbiddenException('Profile not exist');
+    if (profile.accessFailedCount > 0)
+      throw new ForbiddenException('This profile no longer exist');
+    
     const postList = await this.prismaService.post.findMany({
       where: {
         userId: profile.id,
+        deletedAt: undefined
       },
     });
 

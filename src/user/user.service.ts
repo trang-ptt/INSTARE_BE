@@ -99,6 +99,7 @@ export class UserService {
     const postList = await this.prismaService.post.findMany({
       where: {
         userId: user.id,
+        deletedAt: undefined
       },
     });
 

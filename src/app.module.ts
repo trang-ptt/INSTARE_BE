@@ -9,6 +9,7 @@ import { StoryModule } from './story/story.module';
 import { NoAuthModule } from './no-auth/no-auth.module';
 import { InteractModule } from './interact/interact.module';
 import { ChatModule } from './chat/chat.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { ChatModule } from './chat/chat.module';
     StoryModule,
     NoAuthModule,
     InteractModule,
-    ChatModule
+    ChatModule,
+    ReportModule
   ],
 })
 export class AppModule {}

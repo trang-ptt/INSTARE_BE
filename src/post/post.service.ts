@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PostDto } from './dto';
@@ -21,6 +21,9 @@ export class PostService {
 
   async getAllPosts(user: User) {
     const posts: any = await this.prismaService.post.findMany({
+      where: {
+        deletedAt: undefined
+      },
       select: {
         id: true,
         mediaList: true,
@@ -64,5 +67,30 @@ export class PostService {
       },
     });
     return like != null;
+  }
+
+  async deletePost(user: User, id: string) {
+    const post = await this.prismaService.post.findUnique({
+      where: {
+        id
+      }
+    })
+    
+    if (!post) throw new ForbiddenException('Post not exist')
+    if (post.userId !== user.id) throw new ForbiddenException(`You can't delete other people's post`)
+    if (post.deletedAt) throw new ForbiddenException('Post already deleted')
+
+    await this.prismaService.post.update({
+      where: {
+        id
+      },
+      data: {
+        deletedAt: new Date()
+      }
+    })
+
+    return {
+      code: 'SUCCESS'
+    }
   }
 }
