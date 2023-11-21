@@ -111,10 +111,10 @@ export class ChatService {
               where: {
                 user: {
                   id: {
-                    not: user.id
+                    not: user.id,
                   },
-                  accessFailedCount: 0
-                }
+                  accessFailedCount: 0,
+                },
               },
               select: {
                 user: {
@@ -145,10 +145,12 @@ export class ChatService {
     });
     const list: any[] = [];
     for await (const participant of participants) {
-      list.push({
-        user: participant.conversation.participant[0].user,
-        message: participant.conversation.message[0],
-      });
+      const toUser = participant.conversation.participant[0]?.user || undefined;
+      if (toUser)
+        list.push({
+          user: toUser,
+          message: participant.conversation.message[0],
+        });
     }
     list.sort(this.compare);
     const users = await this.prismaService.user.findMany({

@@ -20,9 +20,9 @@ export class PostService {
   }
 
   async getAllPosts(user: User) {
-    const posts: any = await this.prismaService.post.findMany({
+    const posts = await this.prismaService.post.findMany({
       where: {
-        deletedAt: undefined
+        deletedAt: undefined,
       },
       select: {
         id: true,
@@ -34,6 +34,7 @@ export class PostService {
             id: true,
             username: true,
             ava: true,
+            accessFailedCount: true,
           },
         },
         likes: {
@@ -52,11 +53,17 @@ export class PostService {
       },
     });
 
+    const returnPosts: any[] = [];
+
     for (const post of posts) {
-      post.liked = post.likes.length > 0;
+      if (post.user.accessFailedCount === 0)
+        returnPosts.push({
+          ...post,
+          liked: post.likes.length > 0,
+        });
       delete post.likes;
     }
-    return posts;
+    return returnPosts;
   }
 
   async checkIfUserLikePost(user: User, id: string) {
@@ -72,25 +79,26 @@ export class PostService {
   async deletePost(user: User, id: string) {
     const post = await this.prismaService.post.findUnique({
       where: {
-        id
-      }
-    })
-    
-    if (!post) throw new ForbiddenException('Post not exist')
-    if (post.userId !== user.id) throw new ForbiddenException(`You can't delete other people's post`)
-    if (post.deletedAt) throw new ForbiddenException('Post already deleted')
+        id,
+      },
+    });
+
+    if (!post) throw new ForbiddenException('Post not exist');
+    if (post.userId !== user.id)
+      throw new ForbiddenException(`You can't delete other people's post`);
+    if (post.deletedAt) throw new ForbiddenException('Post already deleted');
 
     await this.prismaService.post.update({
       where: {
-        id
+        id,
       },
       data: {
-        deletedAt: new Date()
-      }
-    })
+        deletedAt: new Date(),
+      },
+    });
 
     return {
-      code: 'SUCCESS'
-    }
+      code: 'SUCCESS',
+    };
   }
 }
