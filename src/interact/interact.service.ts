@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { Reaction, User } from '@prisma/client';
 import { ChatGateway } from 'src/chat/chat.gateway';
 import { ChatService } from 'src/chat/chat.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -14,7 +14,24 @@ export class InteractService {
     private chatService: ChatService,
   ) {}
 
-  async likePost(user: User, id: string) {
+  getReaction(react: string) {
+    switch(react) {
+      case 'LOVE':
+        return Reaction.LOVE
+      case 'LIKE':
+        return Reaction.LIKE
+      case 'LAUGH':
+        return Reaction.LAUGH
+      case 'SAD':
+        return Reaction.SAD
+      case 'ANGRY':
+        return Reaction.ANGRY
+      default:
+        return Reaction.LOVE
+    }
+  }
+
+  async likePost(user: User, id: string, react: string) {
     const liked = await this.prismaService.like.findFirst({
       where: {
         postId: id,
@@ -22,11 +39,23 @@ export class InteractService {
       },
     });
 
-    if (liked) throw new ForbiddenException('You liked this post');
-    const like = await this.prismaService.like.create({
+    let like;
+    if (liked) {
+      like = await this.prismaService.like.update({
+        where: {
+          id: liked.id
+        },
+        data: {
+          react: this.getReaction(react)
+        }
+      })
+      return like
+    }
+    like = await this.prismaService.like.create({
       data: {
         userId: user.id,
         postId: id,
+        react: this.getReaction(react)
       },
     });
 

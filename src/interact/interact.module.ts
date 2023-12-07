@@ -7,6 +7,6 @@ import { ChatService } from 'src/chat/chat.service';
 @Module({
   controllers: [InteractController],
   providers: [InteractService, ChatService],
-  imports: [ChatModule]
+  imports: [ChatModule],
 })
 export class InteractModule {}
