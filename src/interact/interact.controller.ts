@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -15,6 +16,7 @@ import { JwtGuard } from 'src/auth/guard';
 import { CommentDto } from './dto/cmt.dto';
 import { ShareDto } from './dto/share.dto';
 import { InteractService } from './interact.service';
+import { LikeDTO } from './dto/like.dto';
 
 @ApiTags('Interact')
 @UseGuards(JwtGuard)
@@ -23,8 +25,8 @@ import { InteractService } from './interact.service';
 export class InteractController {
   constructor(private interactService: InteractService) {}
   @Post('likePost/:id')
-  likePost(@GetUser() user: User, @Param('id') id: string) {
-    return this.interactService.likePost(user, id);
+  likePost(@GetUser() user: User, @Param('id') id: string, @Query() dto: LikeDTO) {
+    return this.interactService.likePost(user, id, dto.react.toUpperCase());
   }
 
   @Delete('dislikePost/:id')
