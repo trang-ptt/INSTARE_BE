@@ -2,6 +2,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
 import * as argon from 'argon2';
 import { PrismaService } from './../prisma/prisma.service';
 import { AuthDto } from './dto/auth.dto';
@@ -63,7 +64,7 @@ export class AuthService {
 
   async signIn(dto: SignInDto) {
     //find user by email or username
-    let user = null;
+    let user: User = null;
     if (this.validateEmail(dto.emailOrUsername)) {
       user = await this.prisma.user.findUnique({
         where: {
@@ -81,6 +82,9 @@ export class AuthService {
       //if user not exist throw
       throw new ForbiddenException("user's not exist");
     }
+
+    if (user.accessFailedCount > 0)
+      throw new ForbiddenException("user's BANNED");
     //compare password
     const pwMatches = await argon.verify(user.password, dto.password);
     //if password incorrect throw

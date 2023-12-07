@@ -10,7 +10,9 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('InStare API list')
-    .setDescription('Try it yourself')
+    .setDescription(
+      'Access token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2NDZjNjY2OGJkYTlhNzkzN2M2YmQxMGEiLCJlbWFpbCI6ImFAZ21haWwuY29tIiwiaWF0IjoxNzAxOTYyMDM2fQ.6qkvrvnbGnwP4yU0Y6rKb9BGhruLBuS6LiOAp5fMV4g',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .build();
