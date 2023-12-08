@@ -48,10 +48,27 @@ export class NoAuthService {
         },
         caption: true,
         mediaList: true,
+        emotion: true,
         createdAt: true,
+        likes: {
+          select: {
+            react: true
+          }
+        },
+        tags: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
             likes: true,
+            tags: true,
           },
         },
         comments: {

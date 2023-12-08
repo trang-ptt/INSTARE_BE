@@ -1,11 +1,15 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { NotiType, User } from '@prisma/client';
+import { ChatGateway } from 'src/chat/chat.gateway';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PostDto } from './dto';
 
 @Injectable()
 export class PostService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private chatGateway: ChatGateway,
+  ) {}
 
   async createPost(user: User, dto: PostDto, arrayURL: string[]) {
     const post = await this.prismaService.post.create({
@@ -14,9 +18,57 @@ export class PostService {
         mediaList: arrayURL,
         caption: dto.caption,
         thumbnail: arrayURL[0],
+        layout: parseInt(dto.layout?.toString()) || 1,
+        emotion: dto.emotion,
       },
     });
+
+    if (dto.tagUserIdList.length > 0) {
+      const tags = [],
+        noti = [];
+      dto.tagUserIdList.forEach((userId) => {
+        tags.push({
+          postId: post.id,
+          userId,
+        });
+        noti.push({
+          interactedId: user.id,
+          notifiedId: userId,
+          notiType: NotiType.TAG,
+          postId: post.id,
+        });
+      });
+
+      Promise.all([
+        await this.prismaService.tag.createMany({
+          data: tags,
+        }),
+        await this.prismaService.notification.createMany({
+          data: noti,
+        }),
+        dto.tagUserIdList.forEach(async (id) => {
+          const socketId = await this.getNotifiedUserSocketId(id);
+          this.chatGateway.server
+            .to(socketId)
+            .emit('onNotification', 'New Notification!');
+        }),
+      ]).catch((error) => {
+        throw error;
+      });
+    }
     return post;
+  }
+
+  async getNotifiedUserSocketId(notifiedId: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        id: notifiedId,
+      },
+      select: {
+        socketId: true,
+      },
+    });
+    return user.socketId;
   }
 
   async getAllPosts(user: User) {
@@ -28,6 +80,8 @@ export class PostService {
         id: true,
         mediaList: true,
         caption: true,
+        layout: true,
+        emotion: true,
         createdAt: true,
         user: {
           select: {
@@ -38,8 +92,19 @@ export class PostService {
           },
         },
         likes: {
-          where: {
-            userId: user.id,
+          select: {
+            userId: true,
+            react: true,
+          },
+        },
+        tags: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
           },
         },
         _count: {
@@ -56,12 +121,16 @@ export class PostService {
     const returnPosts: any[] = [];
 
     for (const post of posts) {
-      if (post.user.accessFailedCount === 0)
+      if (post.user.accessFailedCount === 0) {
         returnPosts.push({
           ...post,
-          liked: post.likes.length > 0,
+          liked: post.likes.some((entry) => entry.userId === user.id),
         });
-      delete post.likes;
+        post.likes.forEach((like) => {
+          delete like.userId
+        })
+      }
+      delete post.user.accessFailedCount;
     }
     return returnPosts;
   }
