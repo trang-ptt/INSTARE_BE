@@ -15,19 +15,19 @@ export class InteractService {
   ) {}
 
   getReaction(react: string) {
-    switch(react) {
+    switch (react) {
       case 'LOVE':
-        return Reaction.LOVE
+        return Reaction.LOVE;
       case 'LIKE':
-        return Reaction.LIKE
+        return Reaction.LIKE;
       case 'LAUGH':
-        return Reaction.LAUGH
+        return Reaction.LAUGH;
       case 'SAD':
-        return Reaction.SAD
+        return Reaction.SAD;
       case 'ANGRY':
-        return Reaction.ANGRY
+        return Reaction.ANGRY;
       default:
-        return Reaction.LOVE
+        return Reaction.LOVE;
     }
   }
 
@@ -43,19 +43,19 @@ export class InteractService {
     if (liked) {
       like = await this.prismaService.like.update({
         where: {
-          id: liked.id
+          id: liked.id,
         },
         data: {
-          react: this.getReaction(react)
-        }
-      })
-      return like
+          react: this.getReaction(react),
+        },
+      });
+      return like;
     }
     like = await this.prismaService.like.create({
       data: {
         userId: user.id,
         postId: id,
-        react: this.getReaction(react)
+        react: this.getReaction(react),
       },
     });
 
@@ -276,6 +276,10 @@ export class InteractService {
           break;
         case 'REPORT':
           message = `Your post was marked violated and deleted. Tell me if this was a mistake.`;
+          break;
+        case 'TAG':
+          message = 'tagged you in a post';
+          break;
         default:
           break;
       }
@@ -286,7 +290,7 @@ export class InteractService {
         message,
         read: noti.read,
         createdAt: noti.createdAt,
-        notiType: noti.notiType
+        notiType: noti.notiType,
       });
     }
     return notifications;

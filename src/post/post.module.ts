@@ -3,9 +3,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CloudinaryModule } from 'nestjs-cloudinary';
 import { PostController } from './post.controller';
 import { PostService } from './post.service';
+import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
   imports: [
+    ChatModule,
     CloudinaryModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

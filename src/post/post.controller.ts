@@ -11,7 +11,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { CloudinaryService } from 'nestjs-cloudinary';
 import { GetUser } from 'src/auth/decorator';
@@ -29,6 +29,35 @@ export class PostController {
     private postService: PostService,
   ) {}
 
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: {
+            type: 'file',
+          },
+        },
+        caption: {
+          type: 'string',
+        },
+        layout: {
+          type: 'number',
+        },
+        emotion: {
+          type: 'string',
+        },
+        tagUserIdList: {
+          type: 'array',
+          items: {
+            type: 'string'
+          }
+        }
+      },
+    },
+  })
   @Post('createPost')
   @UseInterceptors(FilesInterceptor('files'))
   async createPost(
