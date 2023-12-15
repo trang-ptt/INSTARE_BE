@@ -142,7 +142,7 @@ export class PostService {
         postId: id,
       },
     });
-    return like != null;
+    return like?.react || null;
   }
 
   async deletePost(user: User, id: string) {
