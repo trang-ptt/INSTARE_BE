@@ -52,8 +52,8 @@ export class NoAuthService {
         createdAt: true,
         likes: {
           select: {
-            react: true
-          }
+            react: true,
+          },
         },
         tags: {
           select: {
@@ -87,7 +87,7 @@ export class NoAuthService {
         deletedAt: true,
       },
     });
-    if (!post) throw new ForbiddenException('Post not found')
+    if (!post) throw new ForbiddenException('Post not found');
     if (post.deletedAt) throw new ForbiddenException('This post was deleted');
     return post;
   }
@@ -117,11 +117,11 @@ export class NoAuthService {
     if (!profile) throw new ForbiddenException('Profile not exist');
     if (profile.accessFailedCount > 0)
       throw new ForbiddenException('This profile no longer exist');
-    
+
     const postList = await this.prismaService.post.findMany({
       where: {
         userId: profile.id,
-        deletedAt: undefined
+        deletedAt: undefined,
       },
     });
 
@@ -129,12 +129,14 @@ export class NoAuthService {
     const videoExtensions = /\.(mp4|mov|avi|wmv|flv)$/i;
     const posts: any[] = [];
     for (const post of postList) {
-      posts.push({
-        id: post.id,
-        thumbnail: post.thumbnail,
-        multiple: post.mediaList.length > 1,
-        containVideo: videoExtensions.test(post.mediaList[0]),
-      });
+      if (!post.deletedAt) {
+        posts.push({
+          id: post.id,
+          thumbnail: post.thumbnail,
+          multiple: post.mediaList.length > 1,
+          containVideo: videoExtensions.test(post.mediaList[0]),
+        });
+      }
     }
     profile.posts = posts;
     return profile;

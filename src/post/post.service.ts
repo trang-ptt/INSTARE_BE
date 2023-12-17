@@ -73,9 +73,6 @@ export class PostService {
 
   async getAllPosts(user: User) {
     const posts = await this.prismaService.post.findMany({
-      where: {
-        deletedAt: undefined,
-      },
       select: {
         id: true,
         mediaList: true,
@@ -83,6 +80,7 @@ export class PostService {
         layout: true,
         emotion: true,
         createdAt: true,
+        deletedAt: true,
         user: {
           select: {
             id: true,
@@ -121,14 +119,12 @@ export class PostService {
     const returnPosts: any[] = [];
 
     for (const post of posts) {
-      if (post.user.accessFailedCount === 0) {
+      if (post.user.accessFailedCount === 0 && !post.deletedAt) {
+        const likeIndex = post.likes.findIndex(item => item.userId === user.id)
         returnPosts.push({
           ...post,
-          liked: post.likes.some((entry) => entry.userId === user.id),
+          liked: post.likes[likeIndex]?.react || null,
         });
-        post.likes.forEach((like) => {
-          delete like.userId
-        })
       }
       delete post.user.accessFailedCount;
     }
