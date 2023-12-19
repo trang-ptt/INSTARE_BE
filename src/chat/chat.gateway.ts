@@ -8,6 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { User } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
+import { redisClient } from 'src/app.consts';
 import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ChatService } from './chat.service';
@@ -29,10 +30,52 @@ export class ChatGateway
     private chatService: ChatService,
   ) {}
 
-  onModuleInit() {
+  async onModuleInit() {
     this.server.on('connection', (socket) => {
       console.log(socket.id);
     });
+
+    const redis = redisClient;
+    await redis.connect();
+    const listener = async (postId, channel) => {
+      console.log(postId, channel);
+      const post = await this.prismaService.post.findUnique({
+        where: {
+          id: postId,
+        },
+      });
+      const followers = await this.prismaService.follow.findMany({
+        where: {
+          followerId: post.userId,
+        },
+        select: {
+          id: true,
+          followerId: true,
+          followingId: true,
+          following: {
+            select: {
+              socketId: true,
+            },
+          },
+        },
+      });
+      await Promise.all(
+        followers.map(async (follower) => {
+          await this.prismaService.notification.create({
+            data: {
+              interactedId: post.userId,
+              notifiedId: follower.followingId,
+              notiType: 'POST',
+              postId,
+            },
+          });
+          this.server
+            .to(follower.following.socketId)
+            .emit('onNotification', 'New Notification!');
+        }),
+      );
+    };
+    await redis.subscribe('instare:post', listener);
   }
 
   async handleConnection(client: Socket) {

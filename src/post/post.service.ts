@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { NotiType, User } from '@prisma/client';
+import { redisClient } from 'src/app.consts';
 import { ChatGateway } from 'src/chat/chat.gateway';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PostDto } from './dto';
@@ -12,6 +13,9 @@ export class PostService {
   ) {}
 
   async createPost(user: User, dto: PostDto, arrayURL: string[]) {
+    const channelName = `instare:post`;
+    const redis = redisClient.duplicate();
+
     const post = await this.prismaService.post.create({
       data: {
         userId: user.id,
@@ -23,7 +27,10 @@ export class PostService {
       },
     });
 
-    if (dto.tagUserIdList.length > 0) {
+    redis.connect()
+    await redis.publish(channelName, post.id);
+
+    if (dto.tagUserIdList?.length > 0) {
       const tags = [],
         noti = [];
       dto.tagUserIdList.forEach((userId) => {
@@ -39,11 +46,11 @@ export class PostService {
         });
       });
 
-      Promise.all([
-        await this.prismaService.tag.createMany({
+      await Promise.all([
+        this.prismaService.tag.createMany({
           data: tags,
         }),
-        await this.prismaService.notification.createMany({
+        this.prismaService.notification.createMany({
           data: noti,
         }),
         dto.tagUserIdList.forEach(async (id) => {
@@ -120,7 +127,9 @@ export class PostService {
 
     for (const post of posts) {
       if (post.user.accessFailedCount === 0 && !post.deletedAt) {
-        const likeIndex = post.likes.findIndex(item => item.userId === user.id)
+        const likeIndex = post.likes.findIndex(
+          (item) => item.userId === user.id,
+        );
         returnPosts.push({
           ...post,
           liked: post.likes[likeIndex]?.react || null,

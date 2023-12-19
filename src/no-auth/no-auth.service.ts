@@ -138,6 +138,7 @@ export class NoAuthService {
         });
       }
     }
+    profile._count.posts = posts.length
     profile.posts = posts;
     return profile;
   }
