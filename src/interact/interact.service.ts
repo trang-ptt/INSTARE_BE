@@ -221,19 +221,22 @@ export class InteractService {
     if (!(await this.checkIfUserFollowed(user, id))) {
       throw new ForbiddenException("You didn't follow this user");
     }
-    await this.prismaService.follow.deleteMany({
-      where: {
-        followerId: id,
-        followingId: user.id,
-      },
-    });
-    await this.prismaService.notification.deleteMany({
-      where: {
-        interactedId: user.id,
-        notifiedId: id,
-        notiType: 'FOLLOW',
-      },
-    });
+    await Promise.all([
+      this.prismaService.follow.deleteMany({
+        where: {
+          followerId: id,
+          followingId: user.id,
+        },
+      }),
+      this.prismaService.notification.deleteMany({
+        where: {
+          interactedId: user.id,
+          notifiedId: id,
+          notiType: 'FOLLOW',
+        },
+      }),
+    ]);
+
     return 'Follow and noti deleted';
   }
 
@@ -279,6 +282,9 @@ export class InteractService {
           break;
         case 'TAG':
           message = 'tagged you in a post';
+          break;
+        case 'POST':
+          message = 'just created a post';
           break;
         default:
           break;

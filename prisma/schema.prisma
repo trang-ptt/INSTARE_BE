@@ -150,6 +150,7 @@ enum NotiType {
   COMMENT
   REPORT
   TAG
+  POST
 }
 
 model Follow {
