@@ -5,7 +5,7 @@ export class PostDto {
   caption: string
 
   @ApiProperty()
-  tagUserIdList: string[]
+  tagUserIdList: string
 
   @ApiProperty()
   emotion: string

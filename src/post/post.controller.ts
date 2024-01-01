@@ -50,10 +50,8 @@ export class PostController {
           type: 'string',
         },
         tagUserIdList: {
-          type: 'array',
-          items: {
-            type: 'string'
-          }
+          type: 'string',
+          description: 'Separate by comma. Ex: a,b'
         }
       },
     },

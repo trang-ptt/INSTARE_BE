@@ -16,6 +16,9 @@ export class PostService {
     const channelName = `instare:post`;
     const redis = redisClient.duplicate();
 
+    const tagUserIdList = dto.tagUserIdList
+      ? dto.tagUserIdList.trim().split(',')
+      : null;
     const post = await this.prismaService.post.create({
       data: {
         userId: user.id,
@@ -27,13 +30,13 @@ export class PostService {
       },
     });
 
-    redis.connect()
+    redis.connect();
     await redis.publish(channelName, post.id);
 
-    if (dto.tagUserIdList?.length > 0) {
+    if (tagUserIdList) {
       const tags = [],
         noti = [];
-      dto.tagUserIdList.forEach((userId) => {
+      for (const userId of tagUserIdList) {
         tags.push({
           postId: post.id,
           userId,
@@ -44,7 +47,7 @@ export class PostService {
           notiType: NotiType.TAG,
           postId: post.id,
         });
-      });
+      }
 
       await Promise.all([
         this.prismaService.tag.createMany({
@@ -53,16 +56,18 @@ export class PostService {
         this.prismaService.notification.createMany({
           data: noti,
         }),
-        dto.tagUserIdList.forEach(async (id) => {
-          const socketId = await this.getNotifiedUserSocketId(id);
-          this.chatGateway.server
-            .to(socketId)
-            .emit('onNotification', 'New Notification!');
-        }),
       ]).catch((error) => {
         throw error;
       });
+
+      for (const userId of tagUserIdList) {
+        const socketId = await this.getNotifiedUserSocketId(userId);
+        this.chatGateway.server
+          .to(socketId)
+          .emit('onNotification', 'New Notification!');
+      }
     }
+
     return post;
   }
 
