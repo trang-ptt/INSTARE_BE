@@ -113,6 +113,7 @@ export class PostService {
               select: {
                 id: true,
                 username: true,
+                ava: true
               },
             },
           },

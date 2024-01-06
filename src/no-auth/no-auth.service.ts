@@ -61,6 +61,7 @@ export class NoAuthService {
               select: {
                 id: true,
                 username: true,
+                ava: true,
               },
             },
           },
@@ -138,7 +139,7 @@ export class NoAuthService {
         });
       }
     }
-    profile._count.posts = posts.length
+    profile._count.posts = posts.length;
     profile.posts = posts;
     return profile;
   }
